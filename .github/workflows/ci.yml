@@ -3,6 +3,8 @@
 #
 #   PR            build, test, Sonar, Trivy, package, SBOM
 #   push to main  + upload to Artifactory as 0.0.0-<sha>
+#   Run workflow  with a version: build it, then tag v<version> + GitHub
+#                 release + upload as <version>
 #   v* tag        + GitHub release, upload as <tag without v>
 #
 # Configuration (Settings -> Secrets and variables -> Actions):
@@ -20,13 +22,17 @@ on:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without the v (e.g. 0.2.0). Empty for a normal CI run
+        required: false
 
 permissions:
   contents: read
 
 jobs:
   pipeline:
-    uses: HamiltonHills/pipeline-actions/.github/workflows/c-pipeline.yml@c/v2
+    uses: HamiltonHills/pipeline-actions/.github/workflows/c-pipeline.yml@feat/c-manual-release   # TEMP: testing; back to @c/v2 after c 2.1.0
     permissions:
       contents: write        # release job creates the GitHub release
       id-token: write
@@ -34,6 +40,7 @@ jobs:
     with:
       package-name: c-project-test
       container: ghcr.io/hamiltonhills/c-builder:1
+      version: ${{ inputs.version }}
       release: ${{ startsWith(github.ref, 'refs/tags/v') }}
       attest: false          # private repo
       sonar-args: ${{ vars.SONAR_ORGANIZATION && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
